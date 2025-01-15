@@ -215,6 +215,94 @@ class SlotRange(betterproto.Message):
 
 
 @dataclass(eq=False, repr=False)
+class Denunciation(betterproto.Message):
+    block_header: "BlockHeaderDenunciation" = betterproto.message_field(
+        1, group="entry"
+    )
+    """Denunciation block header"""
+
+    endorsement: "EndorsementDenunciation" = betterproto.message_field(2, group="entry")
+    """Denunciation endorsement"""
+
+
+@dataclass(eq=False, repr=False)
+class BlockHeaderDenunciation(betterproto.Message):
+    public_key: str = betterproto.string_field(1)
+    """Denunciation public key"""
+
+    slot: "Slot" = betterproto.message_field(2)
+    """Denunciation slot"""
+
+    hash_1: str = betterproto.string_field(3)
+    """Denunciation hash 1"""
+
+    hash_2: str = betterproto.string_field(4)
+    """Denunciation hash 2"""
+
+    signature_1: str = betterproto.string_field(5)
+    """Denunciation sig 1"""
+
+    signature_2: str = betterproto.string_field(6)
+    """Denunciation sig 2"""
+
+
+@dataclass(eq=False, repr=False)
+class EndorsementDenunciation(betterproto.Message):
+    public_key: str = betterproto.string_field(1)
+    """Denunciation public key"""
+
+    slot: "Slot" = betterproto.message_field(2)
+    """Denunciation slot"""
+
+    index: int = betterproto.uint32_field(3)
+    """Denunciation index"""
+
+    hash_1: str = betterproto.string_field(4)
+    """Denunciation hash 1"""
+
+    hash_2: str = betterproto.string_field(5)
+    """Denunciation hash 2"""
+
+    signature_1: str = betterproto.string_field(6)
+    """Denunciation sig 1"""
+
+    signature_2: str = betterproto.string_field(7)
+    """Denunciation sig 2"""
+
+
+@dataclass(eq=False, repr=False)
+class DenunciationIndex(betterproto.Message):
+    """Index for Denunciations in collections (e.g. like a HashMap...)"""
+
+    block_header: "DenunciationBlockHeader" = betterproto.message_field(
+        1, group="entry"
+    )
+    """Denunciation block header"""
+
+    endorsement: "DenunciationEndorsement" = betterproto.message_field(2, group="entry")
+    """Denunciation endorsement"""
+
+
+@dataclass(eq=False, repr=False)
+class DenunciationBlockHeader(betterproto.Message):
+    """Variant for Block header denunciation index"""
+
+    slot: "Slot" = betterproto.message_field(1)
+    """Denunciation slot"""
+
+
+@dataclass(eq=False, repr=False)
+class DenunciationEndorsement(betterproto.Message):
+    """Variant for Endorsement denunciation index"""
+
+    slot: "Slot" = betterproto.message_field(1)
+    """Denounciation slot"""
+
+    index: int = betterproto.uint32_field(2)
+    """Denounciation index"""
+
+
+@dataclass(eq=False, repr=False)
 class Endorsement(betterproto.Message):
     """An endorsement, as sent in the network"""
 
@@ -592,6 +680,9 @@ class BlockHeader(betterproto.Message):
     endorsements: List["SignedEndorsement"] = betterproto.message_field(6)
     """Signed endorsements"""
 
+    denunciations: List["Denunciation"] = betterproto.message_field(7)
+    """Denunciations"""
+
 
 @dataclass(eq=False, repr=False)
 class FilledOperationEntry(betterproto.Message):
@@ -734,38 +825,6 @@ class DatastoreEntry(betterproto.Message):
 
 
 @dataclass(eq=False, repr=False)
-class DenunciationIndex(betterproto.Message):
-    """Index for Denunciations in collections (e.g. like a HashMap...)"""
-
-    block_header: "DenunciationBlockHeader" = betterproto.message_field(
-        1, group="entry"
-    )
-    """Denunciation block header"""
-
-    endorsement: "DenunciationEndorsement" = betterproto.message_field(2, group="entry")
-    """Denunciation endorsement"""
-
-
-@dataclass(eq=False, repr=False)
-class DenunciationBlockHeader(betterproto.Message):
-    """Variant for Block header denunciation index"""
-
-    slot: "Slot" = betterproto.message_field(1)
-    """Denounciation slot"""
-
-
-@dataclass(eq=False, repr=False)
-class DenunciationEndorsement(betterproto.Message):
-    """Variant for Endorsement denunciation index"""
-
-    slot: "Slot" = betterproto.message_field(1)
-    """Denounciation slot"""
-
-    index: int = betterproto.uint32_field(2)
-    """Denounciation index"""
-
-
-@dataclass(eq=False, repr=False)
 class SlotDraw(betterproto.Message):
     """Slot draw"""
 
@@ -892,9 +951,9 @@ class StateChanges(betterproto.Message):
     executed_ops_changes: List["ExecutedOpsChangeEntry"] = betterproto.message_field(4)
     """Executed operations changes"""
 
-    executed_denunciations_changes: List[
-        "DenunciationIndex"
-    ] = betterproto.message_field(5)
+    executed_denunciations_changes: List["DenunciationIndex"] = (
+        betterproto.message_field(5)
+    )
     """Executed denunciations changes"""
 
     execution_trail_hash_change: "SetOrKeepString" = betterproto.message_field(6)
@@ -1264,10 +1323,8 @@ class ReadOnlyExecutionCall(betterproto.Message):
     used
     """
 
-    is_final: bool = betterproto.bool_field(6)
-    """
-    execution start state Whether to start execution from final or active state
-    """
+    fee: "NativeAmount" = betterproto.message_field(7)
+    """fee paid by the caller when the call is processed (optional)"""
 
 
 @dataclass(eq=False, repr=False)
@@ -1296,6 +1353,9 @@ class FunctionCall(betterproto.Message):
 
     parameter: bytes = betterproto.bytes_field(3)
     """Parameter to pass to the target function"""
+
+    coins: "NativeAmount" = betterproto.message_field(4)
+    """Coins transferred to the target address during the call"""
 
 
 @dataclass(eq=False, repr=False)
@@ -1475,6 +1535,12 @@ class NodeStatus(betterproto.Message):
     config: "CompactConfig" = betterproto.message_field(16)
     """Compact configuration"""
 
+    chain_id: int = betterproto.uint64_field(17)
+    """Chain id"""
+
+    current_mip_version: int = betterproto.uint32_field(18)
+    """Current mip version"""
+
 
 @dataclass(eq=False, repr=False)
 class ConnectedNode(betterproto.Message):
@@ -1558,6 +1624,15 @@ class PublicStatus(betterproto.Message):
 
     config: "CompactConfig" = betterproto.message_field(11)
     """Compact configuration"""
+
+    chain_id: int = betterproto.uint64_field(12)
+    """Chain id"""
+
+    minimal_fees: "NativeAmount" = betterproto.message_field(13)
+    """minimal fees"""
+
+    current_mip_version: int = betterproto.uint32_field(14)
+    """current mip version"""
 
 
 @dataclass(eq=False, repr=False)

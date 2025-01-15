@@ -37,6 +37,19 @@ class ExecutionQueryExecutionStatus(betterproto.Enum):
     EXECUTION_QUERY_EXECUTION_STATUS_EXECUTABLE_OR_EXPIRED = 3
 
 
+class FinalityLevel(betterproto.Enum):
+    """Finality level to filter on in streams"""
+
+    FINALITY_LEVEL_UNSPECIFIED = 0
+    """Unspecified (receive both)"""
+
+    FINALITY_LEVEL_CANDIDATE = 1
+    """Candidate level"""
+
+    FINALITY_LEVEL_FINAL = 2
+    """Final level"""
+
+
 @dataclass(eq=False, repr=False)
 class ExecuteReadOnlyCallRequest(betterproto.Message):
     """ExecuteReadOnlyCallRequest holds request for ExecuteReadOnlyCall"""
@@ -109,9 +122,9 @@ class GetEndorsementsRequest(betterproto.Message):
 class GetEndorsementsResponse(betterproto.Message):
     """GetEndorsementsResponse holds response from GetEndorsements"""
 
-    wrapped_endorsements: List[
-        "__model_v1__.EndorsementWrapper"
-    ] = betterproto.message_field(1)
+    wrapped_endorsements: List["__model_v1__.EndorsementWrapper"] = (
+        betterproto.message_field(1)
+    )
     """Wrapped operations"""
 
 
@@ -146,9 +159,9 @@ class GetOperationsRequest(betterproto.Message):
 class GetOperationsResponse(betterproto.Message):
     """GetOperationsResponse holds response from GetOperations"""
 
-    wrapped_operations: List[
-        "__model_v1__.OperationWrapper"
-    ] = betterproto.message_field(1)
+    wrapped_operations: List["__model_v1__.OperationWrapper"] = (
+        betterproto.message_field(1)
+    )
     """Wrapped operations"""
 
 
@@ -396,6 +409,21 @@ class ExecutionQueryRequestItem(betterproto.Message):
     events: "Events" = betterproto.message_field(20, group="request_item")
     """Gets filtered events"""
 
+    deferred_call_quote: "DeferredCallQuote" = betterproto.message_field(
+        21, group="request_item"
+    )
+    """Deferred call quote"""
+
+    deferred_call_info: "DeferredCallInfo" = betterproto.message_field(
+        22, group="request_item"
+    )
+    """Deferred calls info"""
+
+    deferred_calls_by_slot: "DeferredCallsBySlot" = betterproto.message_field(
+        23, group="request_item"
+    )
+    """Deferred calls by slot"""
+
 
 @dataclass(eq=False, repr=False)
 class AddressExistsCandidate(betterproto.Message):
@@ -576,6 +604,72 @@ class Events(betterproto.Message):
 
 
 @dataclass(eq=False, repr=False)
+class DeferredCallQuote(betterproto.Message):
+    """Deferred call quote"""
+
+    target_slot: "__model_v1__.Slot" = betterproto.message_field(1)
+    """/ target slot"""
+
+    max_gas: int = betterproto.uint64_field(2)
+    """/ max gas requested"""
+
+    params_size: int = betterproto.uint64_field(3)
+    """/ params size in bytes"""
+
+
+@dataclass(eq=False, repr=False)
+class DeferredCallInfo(betterproto.Message):
+    call_id: str = betterproto.string_field(1)
+
+
+@dataclass(eq=False, repr=False)
+class DeferredCallInfoResponse(betterproto.Message):
+    call_id: str = betterproto.string_field(1)
+    call: "DeferredCallInfoEntry" = betterproto.message_field(2)
+
+
+@dataclass(eq=False, repr=False)
+class DeferredCallsBySlot(betterproto.Message):
+    slot: "__model_v1__.Slot" = betterproto.message_field(1)
+
+
+@dataclass(eq=False, repr=False)
+class DeferredCallsBySlotResponse(betterproto.Message):
+    slot: "__model_v1__.Slot" = betterproto.message_field(1)
+    call_ids: List[str] = betterproto.string_field(2)
+
+
+@dataclass(eq=False, repr=False)
+class DeferredCallInfoEntry(betterproto.Message):
+    sender_address: str = betterproto.string_field(1)
+    target_slot: "__model_v1__.Slot" = betterproto.message_field(2)
+    target_address: str = betterproto.string_field(3)
+    target_function: str = betterproto.string_field(4)
+    parameters: bytes = betterproto.bytes_field(5)
+    coins: "__model_v1__.NativeAmount" = betterproto.message_field(6)
+    max_gas: int = betterproto.uint64_field(7)
+    fee: "__model_v1__.NativeAmount" = betterproto.message_field(8)
+    cancelled: bool = betterproto.bool_field(9)
+
+
+@dataclass(eq=False, repr=False)
+class DeferredCallQuoteResponse(betterproto.Message):
+    """deferred call quote response"""
+
+    target_slot: "__model_v1__.Slot" = betterproto.message_field(1)
+    """the slot requested"""
+
+    max_gas_request: int = betterproto.uint64_field(2)
+    """The gas requested"""
+
+    available: bool = betterproto.bool_field(3)
+    """if the quote is available"""
+
+    price: "__model_v1__.NativeAmount" = betterproto.message_field(4)
+    """The amount"""
+
+
+@dataclass(eq=False, repr=False)
 class QueryStateResponse(betterproto.Message):
     """Response to atomically execute a batch of execution state queries"""
 
@@ -647,6 +741,21 @@ class ExecutionQueryResponseItem(betterproto.Message):
         9, group="response_item"
     )
     """Events"""
+
+    deferred_call_quote: "DeferredCallQuoteResponse" = betterproto.message_field(
+        10, group="response_item"
+    )
+    """Deferred call quote"""
+
+    deferred_call_info: "DeferredCallInfoResponse" = betterproto.message_field(
+        11, group="response_item"
+    )
+    """Deferred call info"""
+
+    deferred_calls_by_slot: "DeferredCallsBySlotResponse" = betterproto.message_field(
+        12, group="response_item"
+    )
+    """Deferred calls by slot"""
 
 
 @dataclass(eq=False, repr=False)
@@ -1010,6 +1119,47 @@ class NewSlotExecutionOutputsResponse(betterproto.Message):
 
 
 @dataclass(eq=False, repr=False)
+class NewSlotAbiCallStacksRequest(betterproto.Message):
+    """NewSlotABICallStacks request"""
+
+    finality_level: "FinalityLevel" = betterproto.enum_field(1)
+    """Finality level to receive informations from"""
+
+
+@dataclass(eq=False, repr=False)
+class NewSlotAbiCallStacksResponse(betterproto.Message):
+    """NewSlotABICallStacks response"""
+
+    slot: "__model_v1__.Slot" = betterproto.message_field(1)
+    """Finality level to receive informations from"""
+
+    asc_call_stacks: List["AscabiCallStack"] = betterproto.message_field(2)
+    """Call stacks for asynchronous execution"""
+
+    operation_call_stacks: List["OperationAbiCallStack"] = betterproto.message_field(3)
+    """Call stack for operations"""
+
+
+@dataclass(eq=False, repr=False)
+class NewSlotTransfersRequest(betterproto.Message):
+    """NewSlotTransfers request"""
+
+    finality_level: "FinalityLevel" = betterproto.enum_field(1)
+    """Finality level to receive informations from"""
+
+
+@dataclass(eq=False, repr=False)
+class NewSlotTransfersResponse(betterproto.Message):
+    """NewSlotTransfers response"""
+
+    slot: "__model_v1__.Slot" = betterproto.message_field(1)
+    """Finality level to receive informations from"""
+
+    transfers: List["TransferInfo"] = betterproto.message_field(2)
+    """Transfers"""
+
+
+@dataclass(eq=False, repr=False)
 class SendBlocksRequest(betterproto.Message):
     """SendBlocksRequest holds parameters to SendBlocks"""
 
@@ -1185,6 +1335,171 @@ class SearchOperationsResponse(betterproto.Message):
 
     operation_infos: List["__model_v1__.OperationInfo"] = betterproto.message_field(1)
     """Information about the operations"""
+
+
+@dataclass(eq=False, repr=False)
+class GetOperationAbiCallStacksRequest(betterproto.Message):
+    """GetOperationABICallStacks request"""
+
+    operation_ids: List[str] = betterproto.string_field(1)
+    """Operations ids to get the call stack from"""
+
+
+@dataclass(eq=False, repr=False)
+class AbiCallStackElement(betterproto.Message):
+    """Definition of an ABI call stack element"""
+
+    name: str = betterproto.string_field(1)
+    """name of the ABI"""
+
+    parameters: List[str] = betterproto.string_field(2)
+    """Parameters of the ABI"""
+
+    return_value: str = betterproto.string_field(3)
+    """Return value of the ABI"""
+
+
+@dataclass(eq=False, repr=False)
+class AbiCallStackElementCall(betterproto.Message):
+    """Definition of an ABI call stack element that is the 'call' ABI"""
+
+    name: str = betterproto.string_field(1)
+    """name of the ABI"""
+
+    parameters: List[str] = betterproto.string_field(2)
+    """Parameters of the ABI"""
+
+    sub_calls: List["AbiCallStackElementParent"] = betterproto.message_field(3)
+    """Calls made within this SC call"""
+
+    return_value: str = betterproto.string_field(4)
+    """Return value of the ABI"""
+
+
+@dataclass(eq=False, repr=False)
+class AbiCallStackElementParent(betterproto.Message):
+    """Definition of an ABI call stack element parent"""
+
+    element: "AbiCallStackElement" = betterproto.message_field(
+        1, group="call_stack_element"
+    )
+    """Any ABI call that is not the ABI 'call'"""
+
+    element_call: "AbiCallStackElementCall" = betterproto.message_field(
+        2, group="call_stack_element"
+    )
+    """Element that is the ABI 'call'"""
+
+
+@dataclass(eq=False, repr=False)
+class AbiCallStack(betterproto.Message):
+    """Definition of an ABI call stack"""
+
+    call_stack: List["AbiCallStackElementParent"] = betterproto.message_field(1)
+    """All elements of the call stack"""
+
+
+@dataclass(eq=False, repr=False)
+class GetOperationAbiCallStacksResponse(betterproto.Message):
+    """GetOperationABICallStacks response"""
+
+    call_stacks: List["AbiCallStack"] = betterproto.message_field(1)
+
+
+@dataclass(eq=False, repr=False)
+class GetSlotAbiCallStacksRequest(betterproto.Message):
+    """GetSlotABICallStacks request"""
+
+    slots: List["__model_v1__.Slot"] = betterproto.message_field(1)
+    """Slots asked"""
+
+
+@dataclass(eq=False, repr=False)
+class AscabiCallStack(betterproto.Message):
+    """ABI asynchronous execution call stack"""
+
+    index: int = betterproto.uint64_field(1)
+    """Index of the execution in the slot"""
+
+    call_stack: List["AbiCallStackElementParent"] = betterproto.message_field(2)
+    """Call stack"""
+
+
+@dataclass(eq=False, repr=False)
+class OperationAbiCallStack(betterproto.Message):
+    """Operation execution call stack"""
+
+    operation_id: str = betterproto.string_field(1)
+    """Operation id"""
+
+    call_stack: List["AbiCallStackElementParent"] = betterproto.message_field(2)
+    """Call stack"""
+
+
+@dataclass(eq=False, repr=False)
+class SlotAbiCallStacks(betterproto.Message):
+    """Call stack for a slot"""
+
+    asc_call_stacks: List["AscabiCallStack"] = betterproto.message_field(1)
+    """Call stacks for asynchronous execution"""
+
+    operation_call_stacks: List["OperationAbiCallStack"] = betterproto.message_field(2)
+    """Call stack for operations"""
+
+
+@dataclass(eq=False, repr=False)
+class GetSlotAbiCallStacksResponse(betterproto.Message):
+    """GetSlotABICallStacks response"""
+
+    slot_call_stacks: List["SlotAbiCallStacks"] = betterproto.message_field(1)
+    """Call stacks for the slots"""
+
+
+@dataclass(eq=False, repr=False)
+class GetSlotTransfersRequest(betterproto.Message):
+    """GetSlotTransfersRequest holds request for GetSlotTransfers"""
+
+    slots: List["__model_v1__.Slot"] = betterproto.message_field(1)
+    """Slot to get the transfers from"""
+
+
+@dataclass(eq=False, repr=False)
+class TransferInfo(betterproto.Message):
+    """Transfer info"""
+
+    from_: str = betterproto.string_field(1)
+    """Sender"""
+
+    to: str = betterproto.string_field(2)
+    """Receiver"""
+
+    amount: int = betterproto.uint64_field(3)
+    """Amount in nMAS"""
+
+    operation_id: str = betterproto.string_field(4, group="operation_id_or_asc_index")
+    """Operation id"""
+
+    asc_index: int = betterproto.uint64_field(5, group="operation_id_or_asc_index")
+    """Asynchronous execution index"""
+
+
+@dataclass(eq=False, repr=False)
+class TransferInfos(betterproto.Message):
+    """List of transfers for a slot"""
+
+    slot: "__model_v1__.Slot" = betterproto.message_field(1)
+    """Slot"""
+
+    transfers: List["TransferInfo"] = betterproto.message_field(2)
+    """Transfers"""
+
+
+@dataclass(eq=False, repr=False)
+class GetSlotTransfersResponse(betterproto.Message):
+    """GetSlotTransfersResponse holds response from GetSlotTransfers"""
+
+    transfer_each_slot: List["TransferInfos"] = betterproto.message_field(1)
+    """Transfers for the slot"""
 
 
 @dataclass(eq=False, repr=False)
@@ -1804,6 +2119,57 @@ class PublicServiceStub(betterproto.ServiceStub):
             metadata=metadata,
         )
 
+    async def get_operation_abi_call_stacks(
+        self,
+        get_operation_abi_call_stacks_request: "GetOperationAbiCallStacksRequest",
+        *,
+        timeout: Optional[float] = None,
+        deadline: Optional["Deadline"] = None,
+        metadata: Optional["MetadataLike"] = None
+    ) -> "GetOperationAbiCallStacksResponse":
+        return await self._unary_unary(
+            "/massa.api.v1.PublicService/GetOperationABICallStacks",
+            get_operation_abi_call_stacks_request,
+            GetOperationAbiCallStacksResponse,
+            timeout=timeout,
+            deadline=deadline,
+            metadata=metadata,
+        )
+
+    async def get_slot_abi_call_stacks(
+        self,
+        get_slot_abi_call_stacks_request: "GetSlotAbiCallStacksRequest",
+        *,
+        timeout: Optional[float] = None,
+        deadline: Optional["Deadline"] = None,
+        metadata: Optional["MetadataLike"] = None
+    ) -> "GetSlotAbiCallStacksResponse":
+        return await self._unary_unary(
+            "/massa.api.v1.PublicService/GetSlotABICallStacks",
+            get_slot_abi_call_stacks_request,
+            GetSlotAbiCallStacksResponse,
+            timeout=timeout,
+            deadline=deadline,
+            metadata=metadata,
+        )
+
+    async def get_slot_transfers(
+        self,
+        get_slot_transfers_request: "GetSlotTransfersRequest",
+        *,
+        timeout: Optional[float] = None,
+        deadline: Optional["Deadline"] = None,
+        metadata: Optional["MetadataLike"] = None
+    ) -> "GetSlotTransfersResponse":
+        return await self._unary_unary(
+            "/massa.api.v1.PublicService/GetSlotTransfers",
+            get_slot_transfers_request,
+            GetSlotTransfersResponse,
+            timeout=timeout,
+            deadline=deadline,
+            metadata=metadata,
+        )
+
     async def new_blocks(
         self,
         new_blocks_request_iterator: Union[
@@ -1904,6 +2270,50 @@ class PublicServiceStub(betterproto.ServiceStub):
             new_slot_execution_outputs_request_iterator,
             NewSlotExecutionOutputsRequest,
             NewSlotExecutionOutputsResponse,
+            timeout=timeout,
+            deadline=deadline,
+            metadata=metadata,
+        ):
+            yield response
+
+    async def new_slot_abi_call_stacks(
+        self,
+        new_slot_abi_call_stacks_request_iterator: Union[
+            AsyncIterable["NewSlotAbiCallStacksRequest"],
+            Iterable["NewSlotAbiCallStacksRequest"],
+        ],
+        *,
+        timeout: Optional[float] = None,
+        deadline: Optional["Deadline"] = None,
+        metadata: Optional["MetadataLike"] = None
+    ) -> AsyncIterator["NewSlotAbiCallStacksResponse"]:
+        async for response in self._stream_stream(
+            "/massa.api.v1.PublicService/NewSlotABICallStacks",
+            new_slot_abi_call_stacks_request_iterator,
+            NewSlotAbiCallStacksRequest,
+            NewSlotAbiCallStacksResponse,
+            timeout=timeout,
+            deadline=deadline,
+            metadata=metadata,
+        ):
+            yield response
+
+    async def new_slot_transfers(
+        self,
+        new_slot_transfers_request_iterator: Union[
+            AsyncIterable["NewSlotTransfersRequest"],
+            Iterable["NewSlotTransfersRequest"],
+        ],
+        *,
+        timeout: Optional[float] = None,
+        deadline: Optional["Deadline"] = None,
+        metadata: Optional["MetadataLike"] = None
+    ) -> AsyncIterator["NewSlotTransfersResponse"]:
+        async for response in self._stream_stream(
+            "/massa.api.v1.PublicService/NewSlotTransfers",
+            new_slot_transfers_request_iterator,
+            NewSlotTransfersRequest,
+            NewSlotTransfersResponse,
             timeout=timeout,
             deadline=deadline,
             metadata=metadata,
@@ -2340,6 +2750,7 @@ class PrivateServiceStub(betterproto.ServiceStub):
 
 
 class PublicServiceBase(ServiceBase):
+
     async def execute_read_only_call(
         self, execute_read_only_call_request: "ExecuteReadOnlyCallRequest"
     ) -> "ExecuteReadOnlyCallResponse":
@@ -2415,6 +2826,21 @@ class PublicServiceBase(ServiceBase):
     ) -> "SearchOperationsResponse":
         raise grpclib.GRPCError(grpclib.const.Status.UNIMPLEMENTED)
 
+    async def get_operation_abi_call_stacks(
+        self, get_operation_abi_call_stacks_request: "GetOperationAbiCallStacksRequest"
+    ) -> "GetOperationAbiCallStacksResponse":
+        raise grpclib.GRPCError(grpclib.const.Status.UNIMPLEMENTED)
+
+    async def get_slot_abi_call_stacks(
+        self, get_slot_abi_call_stacks_request: "GetSlotAbiCallStacksRequest"
+    ) -> "GetSlotAbiCallStacksResponse":
+        raise grpclib.GRPCError(grpclib.const.Status.UNIMPLEMENTED)
+
+    async def get_slot_transfers(
+        self, get_slot_transfers_request: "GetSlotTransfersRequest"
+    ) -> "GetSlotTransfersResponse":
+        raise grpclib.GRPCError(grpclib.const.Status.UNIMPLEMENTED)
+
     async def new_blocks(
         self, new_blocks_request_iterator: AsyncIterator["NewBlocksRequest"]
     ) -> AsyncIterator["NewBlocksResponse"]:
@@ -2448,6 +2874,22 @@ class PublicServiceBase(ServiceBase):
     ) -> AsyncIterator["NewSlotExecutionOutputsResponse"]:
         raise grpclib.GRPCError(grpclib.const.Status.UNIMPLEMENTED)
         yield NewSlotExecutionOutputsResponse()
+
+    async def new_slot_abi_call_stacks(
+        self,
+        new_slot_abi_call_stacks_request_iterator: AsyncIterator[
+            "NewSlotAbiCallStacksRequest"
+        ],
+    ) -> AsyncIterator["NewSlotAbiCallStacksResponse"]:
+        raise grpclib.GRPCError(grpclib.const.Status.UNIMPLEMENTED)
+        yield NewSlotAbiCallStacksResponse()
+
+    async def new_slot_transfers(
+        self,
+        new_slot_transfers_request_iterator: AsyncIterator["NewSlotTransfersRequest"],
+    ) -> AsyncIterator["NewSlotTransfersResponse"]:
+        raise grpclib.GRPCError(grpclib.const.Status.UNIMPLEMENTED)
+        yield NewSlotTransfersResponse()
 
     async def send_blocks(
         self, send_blocks_request_iterator: AsyncIterator["SendBlocksRequest"]
@@ -2592,6 +3034,30 @@ class PublicServiceBase(ServiceBase):
         response = await self.search_operations(request)
         await stream.send_message(response)
 
+    async def __rpc_get_operation_abi_call_stacks(
+        self,
+        stream: "grpclib.server.Stream[GetOperationAbiCallStacksRequest, GetOperationAbiCallStacksResponse]",
+    ) -> None:
+        request = await stream.recv_message()
+        response = await self.get_operation_abi_call_stacks(request)
+        await stream.send_message(response)
+
+    async def __rpc_get_slot_abi_call_stacks(
+        self,
+        stream: "grpclib.server.Stream[GetSlotAbiCallStacksRequest, GetSlotAbiCallStacksResponse]",
+    ) -> None:
+        request = await stream.recv_message()
+        response = await self.get_slot_abi_call_stacks(request)
+        await stream.send_message(response)
+
+    async def __rpc_get_slot_transfers(
+        self,
+        stream: "grpclib.server.Stream[GetSlotTransfersRequest, GetSlotTransfersResponse]",
+    ) -> None:
+        request = await stream.recv_message()
+        response = await self.get_slot_transfers(request)
+        await stream.send_message(response)
+
     async def __rpc_new_blocks(
         self, stream: "grpclib.server.Stream[NewBlocksRequest, NewBlocksResponse]"
     ) -> None:
@@ -2642,6 +3108,28 @@ class PublicServiceBase(ServiceBase):
         request = stream.__aiter__()
         await self._call_rpc_handler_server_stream(
             self.new_slot_execution_outputs,
+            stream,
+            request,
+        )
+
+    async def __rpc_new_slot_abi_call_stacks(
+        self,
+        stream: "grpclib.server.Stream[NewSlotAbiCallStacksRequest, NewSlotAbiCallStacksResponse]",
+    ) -> None:
+        request = stream.__aiter__()
+        await self._call_rpc_handler_server_stream(
+            self.new_slot_abi_call_stacks,
+            stream,
+            request,
+        )
+
+    async def __rpc_new_slot_transfers(
+        self,
+        stream: "grpclib.server.Stream[NewSlotTransfersRequest, NewSlotTransfersResponse]",
+    ) -> None:
+        request = stream.__aiter__()
+        await self._call_rpc_handler_server_stream(
+            self.new_slot_transfers,
             stream,
             request,
         )
@@ -2781,6 +3269,24 @@ class PublicServiceBase(ServiceBase):
                 SearchOperationsRequest,
                 SearchOperationsResponse,
             ),
+            "/massa.api.v1.PublicService/GetOperationABICallStacks": grpclib.const.Handler(
+                self.__rpc_get_operation_abi_call_stacks,
+                grpclib.const.Cardinality.UNARY_UNARY,
+                GetOperationAbiCallStacksRequest,
+                GetOperationAbiCallStacksResponse,
+            ),
+            "/massa.api.v1.PublicService/GetSlotABICallStacks": grpclib.const.Handler(
+                self.__rpc_get_slot_abi_call_stacks,
+                grpclib.const.Cardinality.UNARY_UNARY,
+                GetSlotAbiCallStacksRequest,
+                GetSlotAbiCallStacksResponse,
+            ),
+            "/massa.api.v1.PublicService/GetSlotTransfers": grpclib.const.Handler(
+                self.__rpc_get_slot_transfers,
+                grpclib.const.Cardinality.UNARY_UNARY,
+                GetSlotTransfersRequest,
+                GetSlotTransfersResponse,
+            ),
             "/massa.api.v1.PublicService/NewBlocks": grpclib.const.Handler(
                 self.__rpc_new_blocks,
                 grpclib.const.Cardinality.STREAM_STREAM,
@@ -2811,6 +3317,18 @@ class PublicServiceBase(ServiceBase):
                 NewSlotExecutionOutputsRequest,
                 NewSlotExecutionOutputsResponse,
             ),
+            "/massa.api.v1.PublicService/NewSlotABICallStacks": grpclib.const.Handler(
+                self.__rpc_new_slot_abi_call_stacks,
+                grpclib.const.Cardinality.STREAM_STREAM,
+                NewSlotAbiCallStacksRequest,
+                NewSlotAbiCallStacksResponse,
+            ),
+            "/massa.api.v1.PublicService/NewSlotTransfers": grpclib.const.Handler(
+                self.__rpc_new_slot_transfers,
+                grpclib.const.Cardinality.STREAM_STREAM,
+                NewSlotTransfersRequest,
+                NewSlotTransfersResponse,
+            ),
             "/massa.api.v1.PublicService/SendBlocks": grpclib.const.Handler(
                 self.__rpc_send_blocks,
                 grpclib.const.Cardinality.STREAM_STREAM,
@@ -2839,6 +3357,7 @@ class PublicServiceBase(ServiceBase):
 
 
 class PrivateServiceBase(ServiceBase):
+
     async def add_to_bootstrap_blacklist(
         self, add_to_bootstrap_blacklist_request: "AddToBootstrapBlacklistRequest"
     ) -> "AddToBootstrapBlacklistResponse":
